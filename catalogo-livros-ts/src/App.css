@@ -1,0 +1,75 @@
+.app {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 16px;
+  font-family: system-ui, sans-serif;
+}
+
+.book-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.book-form input,
+.book-form select {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px;
+}
+
+.book-form button {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.book-list {
+  list-style: none;
+  padding: 0;
+}
+
+.book-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.author {
+  color: #555;
+}
+
+.status {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.status.lido {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.nao-lido {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.actions button {
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.empty {
+  color: #777;
+}
+
+.error {
+  color: #b00020;
+}
