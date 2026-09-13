@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import type { Book, NewBook } from "./types";
+import type { Book, NewBook, Status } from "./types";
+import { mockBooks } from "./mockBooks";
 import BookForm from "./components/BookForm";
 import BookList from "./components/BookList";
 import "./App.css";
 
-// Troque pelo endpoint gerado na sua conta do crudcrud.com
-const API_URL = "https://crudcrud.com/api/c009d381b1ba4aa2b3b94b4cbe093e37";
+const API_URL = "https://crudcrud.com/api/8b210ddc34a44b71b063933aec3bc923/livros";
 
 function App() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [offline, setOffline] = useState<boolean>(false);
 
   useEffect(() => {
     fetchBooks();
@@ -22,32 +23,57 @@ function App() {
       setLoading(true);
       const response = await axios.get<Book[]>(API_URL);
       setBooks(response.data);
+      setOffline(false);
       setError(null);
     } catch (err) {
       console.error(err);
-      setError("Não foi possível carregar os livros.");
+      setBooks(mockBooks);
+      setOffline(true);
+      setError(
+        "Não foi possível conectar ao CrudCrud. Modo offline ativado: exibindo dados de exemplo."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddBook = async (newBook: NewBook): Promise<void> => {
+    if (offline) {
+      const localBook: Book = { ...newBook, _id: `mock-${Date.now()}` };
+      setBooks((prev) => [...prev, localBook]);
+      return;
+    }
+
     try {
       const response = await axios.post<Book>(API_URL, newBook);
       setBooks((prev) => [...prev, response.data]);
     } catch (err) {
       console.error(err);
-      setError("Não foi possível adicionar o livro.");
+      const localBook: Book = { ...newBook, _id: `mock-${Date.now()}` };
+      setBooks((prev) => [...prev, localBook]);
+      setOffline(true);
+      setError(
+        "Não foi possível conectar ao CrudCrud. Modo offline ativado: as próximas ações ficam só locais."
+      );
     }
   };
 
   const handleDeleteBook = async (id: string): Promise<void> => {
+    if (offline) {
+      setBooks((prev) => prev.filter((book) => book._id !== id));
+      return;
+    }
+
     try {
       await axios.delete(`${API_URL}/${id}`);
       setBooks((prev) => prev.filter((book) => book._id !== id));
     } catch (err) {
       console.error(err);
-      setError("Não foi possível remover o livro.");
+      setBooks((prev) => prev.filter((book) => book._id !== id));
+      setOffline(true);
+      setError(
+        "Não foi possível conectar ao CrudCrud. Modo offline ativado: as próximas ações ficam só locais."
+      );
     }
   };
 
@@ -55,19 +81,36 @@ function App() {
   const handleToggleStatus = async (book: Book): Promise<void> => {
     if (!book._id) return;
 
-    const updatedBook: Book = {
-      ...book,
-      status: book.status === "Lido" ? "Não lido" : "Lido",
+    const newStatus: Status = book.status === "Lido" ? "Não lido" : "Lido";
+
+    if (offline) {
+      setBooks((prev) =>
+        prev.map((b) => (b._id === book._id ? { ...b, status: newStatus } : b))
+      );
+      return;
+    }
+
+    // CrudCrud espera o _id só na URL; o corpo deve trazer apenas os demais campos
+    const bodyToSend: Omit<Book, "_id"> = {
+      title: book.title,
+      author: book.author,
+      status: newStatus,
     };
 
     try {
-      await axios.put(`${API_URL}/${book._id}`, updatedBook);
+      await axios.put(`${API_URL}/${book._id}`, bodyToSend);
       setBooks((prev) =>
-        prev.map((b) => (b._id === book._id ? updatedBook : b))
+        prev.map((b) => (b._id === book._id ? { ...b, status: newStatus } : b))
       );
     } catch (err) {
       console.error(err);
-      setError("Não foi possível atualizar o status do livro.");
+      setBooks((prev) =>
+        prev.map((b) => (b._id === book._id ? { ...b, status: newStatus } : b))
+      );
+      setOffline(true);
+      setError(
+        "Não foi possível conectar ao CrudCrud. Modo offline ativado: as próximas ações ficam só locais."
+      );
     }
   };
 
